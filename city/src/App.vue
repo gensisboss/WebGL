@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted } from 'vue';
 import { initCity } from './enter'
-onMounted(hook ,()=>{
+onMounted(()=>{
   //初始化三维场景
   initCity();
 })
