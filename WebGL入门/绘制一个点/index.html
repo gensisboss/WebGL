@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绘制一个点</title>
+    <script src="../../lib/index.js"></script>
+</head>
+<body>
+    <canvas id="canvas" width="400" height="400">
+        此浏览器不支持webGL
+    </canvas>
+</body>
+</html>
+
+<script>
+    const ctx = document.getElementById('canvas')
+
+    const gl = ctx.getContext('webgl');
+
+    //着色器
+    //创建着色器源码
+    const VERTEX_SHADER_SOURCE = `
+        void main(){
+            //要绘制的坐标
+            gl_Position = vec4(0.0,0.0,0.0,1.0);
+            //要绘制的大小(着色器变量使用的是浮点型)
+            gl_PointSize = 30.0;
+        }
+    `; //顶点着色器
+
+    const FRAGMENT_SHADER_SOURCE = `
+        void main(){
+            //要绘制的颜色
+            gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+        }
+    `; //片元着色器
+
+    const program =  initShader(gl,VERTEX_SHADER_SOURCE,FRAGMENT_SHADER_SOURCE)
+   
+    //要绘制的图形是什么。从哪开始，使用几个顶点
+    gl.drawArrays(gl.POINTS,0,1)
+    // gl.drawArrays(gl.LINES,0,2) //至少需要两个点
+    // gl.drawArrays(gl.TRANGLES,0,3) //至少需要三个点
+
+
+
+
+
+</script>
