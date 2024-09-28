@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>溶解</title>
+    <script src="../../lib/index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            margin: 50px auto 0;
+            display: block;
+            background: yellow;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="400" height="400">
+        此浏览器不支持webGL
+    </canvas>
+</body>
+
+</html>
+
+<script>
+    const ctx = document.getElementById('canvas')
+
+    const gl = ctx.getContext('webgl');
+
+    //着色器
+    //创建着色器源码
+    const VERTEX_SHADER_SOURCE = `
+        precision highp float;
+        attribute vec3 a_position;
+        attribute vec2 a_texCoord;
+        varying vec2 v_texCoord;
+        void main() {
+            gl_Position = vec4(a_position, 1.0);
+            v_texCoord = a_texCoord;
+        }
+    `; //顶点着色器
+
+    const FRAGMENT_SHADER_SOURCE = `
+        precision highp float;
+        uniform sampler2D u_imageTexture;
+        uniform sampler2D u_noiseTexture;
+        uniform float u_ablationThreshold;
+        varying vec2 v_texCoord;
+        void main() {
+            vec4 imageColor = texture2D(u_imageTexture, v_texCoord);
+            vec4 noiseColor = texture2D(u_noiseTexture, v_texCoord);
+            if (noiseColor.r < u_ablationThreshold) {
+                discard;
+            }
+            gl_FragColor = imageColor;
+        }
+    `; //片元着色器
+
+    const program = initShader(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
+    const aPosition = gl.getAttribLocation(program, 'a_position')
+    const aTex = gl.getAttribLocation(program, 'a_texCoord')
+    const uSampler1 = gl.getUniformLocation(program, 'u_imageTexture')
+    const uSampler2 = gl.getUniformLocation(program, 'u_noiseTexture')
+    const ablationThreshold = gl.getUniformLocation(program, 'u_ablationThreshold')
+
+
+    const points = new Float32Array([
+        -0.5, 0.5, 0.0, 1.0,
+        -0.5, -0.5, 0.0, 0.0,
+        0.5, 0.5, 1.0, 1.0,
+        0.5, -0.5, 1.0, 0.0,
+    ])
+
+    const buffer = gl.createBuffer();
+    const BYTES = points.BYTES_PER_ELEMENT;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+    gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW)
+
+
+    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, BYTES * 4, 0);
+    gl.vertexAttribPointer(aTex, 2, gl.FLOAT, false, BYTES * 4, BYTES * 2);
+
+    gl.enableVertexAttribArray(aPosition)
+    gl.enableVertexAttribArray(aTex)
+
+
+    let deg = 0;
+    function draw() {
+        deg += 0.01;
+        gl.uniform1f(ablationThreshold, deg);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+        requestAnimationFrame(draw)
+    }
+
+    Promise.all([
+        getImage(gl, "../../picture/ice.png", uSampler1, 0),
+        getImage(gl, "../../picture/noise.png", uSampler2, 1)
+    ]).then(() => {
+        draw()
+    })
+
+
+</script>

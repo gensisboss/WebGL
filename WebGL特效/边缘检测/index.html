@@ -1,0 +1,115 @@
+<!--
+ * @Author: gongganghao 2908273068@qq.com
+ * @Date: 2024-09-26 16:48:22
+ * @LastEditors: gongganghao 2908273068@qq.com
+ * @LastEditTime: 2024-09-26 18:32:04
+ * @FilePath: \Shader\shder2.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>边缘</title>
+    <script src="../../lib/index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            margin: 50px auto 0;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="800" height="800" style="background-color: transparent;">
+        此浏览器不支持webGL
+    </canvas>
+</body>
+
+</html>
+
+<script>
+    const ctx = document.getElementById('canvas')
+
+    const gl = ctx.getContext('webgl');
+
+    //着色器
+    //创建着色器源码
+    const VERTEX_SHADER_SOURCE = `
+        attribute vec4 aPosition;
+        attribute vec4 aTex;
+        varying vec2 vTex;
+        void main(){
+            //要绘制的坐标
+            gl_Position = aPosition;
+            vTex = vec2(aTex.x,aTex.y);
+        }
+    `; //顶点着色器
+
+    const FRAGMENT_SHADER_SOURCE = `
+        precision mediump float;
+        uniform sampler2D uImage;
+        varying vec2 vTex;
+        void main() {
+            vec4 color = texture2D(uImage, vTex);
+            float edgeStrength = 0.0;
+            // 计算水平和垂直方向的梯度
+            vec2 texOffset = vec2(1.0 / 102.0, 0.0);  // 图片宽度为 102
+            vec4 colorRight = texture2D(uImage, vTex + texOffset);
+            vec4 colorLeft = texture2D(uImage, vTex - texOffset);
+            float horizontalGradient = length(colorRight - colorLeft);
+            texOffset = vec2(0.0, 1.0 / 86.0);  // 图片高度为 86
+            vec4 colorTop = texture2D(uImage, vTex + texOffset);
+            vec4 colorBottom = texture2D(uImage, vTex - texOffset);
+            float verticalGradient = length(colorTop - colorBottom);
+            edgeStrength = sqrt(horizontalGradient * horizontalGradient + verticalGradient * verticalGradient);
+            if (edgeStrength > 0.8) {  // 调整阈值以控制边缘检测的敏感度
+                gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);  // 黄色描边
+            } else {
+                gl_FragColor = color;
+            }
+        }
+    `; //片元着色器
+
+    const program = initShader(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
+    const aPosition = gl.getAttribLocation(program, 'aPosition')
+    const aTex = gl.getAttribLocation(program, 'aTex')
+    const uImage = gl.getUniformLocation(program, 'uImage')
+
+    const points = new Float32Array([
+        -0.5, 0.5, 0.0, 1.0,
+        -0.5, -0.5, 0.0, 0.0,
+        0.5, 0.5, 1.0, 1.0,
+        0.5, -0.5, 1.0, 0.0,
+    ])
+
+    const buffer = gl.createBuffer();
+    const BYTES = points.BYTES_PER_ELEMENT;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+    gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW)
+
+
+    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, BYTES * 4, 0);
+    gl.vertexAttribPointer(aTex, 2, gl.FLOAT, false, BYTES * 4, BYTES * 2);
+
+    gl.enableVertexAttribArray(aPosition)
+    gl.enableVertexAttribArray(aTex)
+
+
+
+
+    Promise.all([
+        getImage(gl, "../../picture/fish.png", uImage, 0),
+    ]).then(() => {
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+    })
+
+</script>
