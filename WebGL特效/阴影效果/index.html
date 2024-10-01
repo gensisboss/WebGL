@@ -1,0 +1,115 @@
+<!--
+ * @Author: gongganghao 2908273068@qq.com
+ * @Date: 2024-09-26 16:48:22
+ * @LastEditors: gongganghao 2908273068@qq.com
+ * @LastEditTime: 2024-09-30 18:08:27
+ * @FilePath: \Shader\shder2.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>阴影</title>
+    <script src="../../lib/index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            margin: 5px auto 0;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="400" height="400" style="background-color: transparent;"></canvas>
+</body>
+
+</html>
+
+<script>
+    const ctx = document.getElementById('canvas')
+
+    const gl = ctx.getContext('webgl');
+
+    //着色器
+    //创建着色器源码
+    const VERTEX_SHADER_SOURCE = `
+        attribute vec2 aPosition;
+        attribute vec2 aTex;
+        uniform vec2 uTranslation;
+        uniform vec2 uScaleSize;
+        varying vec2 vTexCoord;
+        void main() {
+            gl_Position = vec4(((aPosition.x + uTranslation.x) *uScaleSize.x),((aPosition.y + uTranslation.y) *uScaleSize.y), 0.0, 1.0);
+            vTexCoord = aTex;
+        }
+    `; //顶点着色器
+
+    const FRAGMENT_SHADER_SOURCE = `
+        precision lowp float;
+        uniform sampler2D uSampler;
+        uniform float uShadow; 
+        //纹理坐标
+        varying vec2 vTexCoord;
+        void main(){
+            vec4 color = texture2D(uSampler, vTexCoord);
+            if(uShadow < 1.0){
+                gl_FragColor = color;
+            }else{
+                gl_FragColor = vec4(0.0,0.0, 0.0, color.a*0.5);
+            }
+           
+        }
+    `; //片元着色器
+
+    const program = initShader(gl, VERTEX_SHADER_SOURCE, FRAGMENT_SHADER_SOURCE)
+    const aPosition = gl.getAttribLocation(program, 'aPosition')
+    const uTranslation = gl.getUniformLocation(program, 'uTranslation')
+    const uScaleSize = gl.getUniformLocation(program, 'uScaleSize')
+    const uShadow = gl.getUniformLocation(program, 'uShadow')
+    const aTex = gl.getAttribLocation(program, 'aTex')
+    const uSampler = gl.getUniformLocation(program, 'uSampler')
+
+    const points = new Float32Array([
+        -0.5, 0.5, 0.0, 1.0,
+        -0.5, -0.5, 0.0, 0.0,
+        0.5, 0.5, 1.0, 1.0,
+        0.5, -0.5, 1.0, 0.0,
+    ])
+
+    const buffer = gl.createBuffer();
+    const BYTES = points.BYTES_PER_ELEMENT;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+    gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW)
+
+
+    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, BYTES * 4, 0);
+    gl.vertexAttribPointer(aTex, 2, gl.FLOAT, false, BYTES * 4, BYTES * 2);
+
+    gl.enableVertexAttribArray(aPosition)
+    gl.enableVertexAttribArray(aTex)
+    gl.enable(gl.BLEND)
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+    Promise.all([
+        getImage(gl, "../../picture/fish.png", uSampler, 0),
+    ]).then(() => {
+        for (let i = 1; i >= 0; i--) {
+            let scaleX = i == 1 ? 0.8 : 1
+            let scaleY = i == 1 ? 0.7 : 1
+            gl.uniform2f(uScaleSize, scaleX, scaleY);
+            gl.uniform2f(uTranslation, i * 0.2, -i * 0.8);
+            gl.uniform1f(uShadow, i);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+        }
+    })
+
+</script>
