@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>笔刷</title>
+    <script src="../../lib/index.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        #canvas {
+            background: yellow;
+            margin: auto;
+        }
+
+        div {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <canvas id="canvas" width="400" height="400">
+            此浏览器不支持canvas
+        </canvas>
+    </div>
+</body>
+</html>
+<script>
+    const canvas = document.getElementById("canvas");
+    const gl = canvas.getContext("webgl");
+    //顶点着色器源码
+    const pointSource = `
+        attribute vec4 aPosition;
+        void main() {
+            //点坐标x,y,z,w其次坐标(x/w, y/w, z/w)
+            gl_Position = aPosition;
+            //点大小
+            gl_PointSize = 10.0;
+        }
+    `
+    //片元着色器源码
+    const flatSource = `
+        void main() {
+            //颜色rgba
+            gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+        }
+    `
+    const program = initShader(gl, pointSource, flatSource);
+    //获得变量地址
+    const aPosition = gl.getAttribLocation(program, "aPosition");
+    const pointarr = []
+    canvas.onmousemove = function (e) {
+        let { top, left } = e.target.getBoundingClientRect();
+        e.clientX - left;
+        const halfHeight = e.target.offsetHeight / 2;
+        const halfWidth = e.target.offsetWidth / 2;
+        // console.log();
+        const x = (e.clientX - (left + halfWidth)) / halfWidth;
+        const y = ((top + halfHeight) - e.clientY) / halfHeight;
+        pointarr.push({x, y})
+        for (let i = 0; i < pointarr.length; i++) {
+            gl.vertexAttrib2f(aPosition, pointarr[i].x, pointarr[i].y);
+            gl.drawArrays(gl.POINTS, 0, 1);
+        }
+    }
+</script>
+
+
+
+
