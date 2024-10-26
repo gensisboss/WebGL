@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>相机运动</title>
+    <style>
+        *{
+            margin:0;
+            padding: 0;
+        }
+    </style>
+    <script src="../../lib/three/three.js"></script>
+</head>
+<body>
+    
+</body>
+</html>
+
+<script>
+    //创建一个场景
+    const scene = new THREE.Scene();
+    //创建一个相机，视点
+    const camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,0.1,1000);
+    //设置相机的位置
+    camera.position.set(0,0,5)
+    //创建一个渲染器
+    const renderer= new THREE.WebGLRenderer();
+    //设置渲染器尺寸
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+    //添加一个立方体
+    const cubeGeometry = new THREE.BoxGeometry(2,2,2);
+    //创建材质wireframe:是否以线框的方式绘制
+    const cubeMaterial = new THREE.MeshBasicMaterial({color:0xff0000,wireframe:true});
+    const cube = new THREE.Mesh(cubeGeometry,cubeMaterial);
+    cube.position.set(0,0,0)
+    //添加到场景里
+    scene.add(cube); 
+   
+    let angle = 0;
+    const radius = 5;
+    const animation = ()=>{
+        requestAnimationFrame(animation);
+        angle += 0.01;
+        camera.position.x = radius*Math.cos(angle);
+        camera.position.y = radius*Math.sin(angle);
+        camera.lookAt(new THREE.Vector3( 0, 0, 0 ));
+        renderer.render(scene,camera);
+    }
+    animation();
+</script>

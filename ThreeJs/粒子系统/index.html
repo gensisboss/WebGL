@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粒子系统</title>
+    <style>
+        *{
+            margin:0;
+            padding: 0;
+        }
+    </style>
+    <script src="../../lib/three/three.js"></script>
+</head>
+<body>
+    
+</body>
+</html>
+
+<script>
+    //创建一个场景
+    const scene = new THREE.Scene();
+    //创建一个相机，视点
+    const camera = new THREE.PerspectiveCamera(45,window.innerWidth/window.innerHeight,1,1000);
+    //设置相机的位置
+    camera.position.set(0,0,20);
+    //创建一个渲染器
+    const renderer= new THREE.WebGLRenderer();
+    //设置渲染器尺寸
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    var terrainLoader = new THREE.TerrainLoader();
+    terrainLoader.load('terrain.bin', function (data) {
+        var geometry = new THREE.PlaneBufferGeometry(7500, 7500, 256, 256);
+        for (var i = 0, l = geometry.vertices.length; i < l; i++) {
+            geometry.vertices[i].z = data[i] / 65535 * 1000;
+        }
+        var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        var terrain = new THREE.Mesh(geometry, material);
+        scene.add(terrain);
+    });
+
+</script>
